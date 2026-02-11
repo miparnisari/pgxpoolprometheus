@@ -1,3 +1,4 @@
+// Package pgxpoolprometheus is a [Prometheus Collector](https://pkg.go.dev/github.com/prometheus/client_golang/prometheus#Collector) for [PGX Pool](https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool).
 package pgxpoolprometheus
 
 /**

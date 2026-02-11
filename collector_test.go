@@ -136,10 +136,7 @@ func TestDescribeDescribesAllAvailableStats(t *testing.T) {
 
 	expectedDescriptorCountRemaining := expectedDescriptorCount
 	uniqueDescriptors := make(map[string]struct{})
-	for {
-		if expectedDescriptorCountRemaining == 0 {
-			break
-		}
+	for expectedDescriptorCountRemaining != 0 {
 		select {
 		case desc := <-ch:
 			assert.Contains(t, desc.String(), labelName)
@@ -192,14 +189,12 @@ func TestCollectCollectsAllAvailableStats(t *testing.T) {
 	go testObject.Collect(ch)
 
 	expectedMetricCountRemaining := expectedMetricCount
-	for {
-		if expectedMetricCountRemaining == 0 {
-			break
-		}
+	for expectedMetricCountRemaining != 0 {
 		select {
 		case metric := <-ch:
 			pb := &dto.Metric{}
-			metric.Write(pb)
+			err := metric.Write(pb)
+			assert.NoError(t, err)
 			description := metric.Desc().String()
 			switch {
 			case strings.Contains(description, "pgxpool_acquire_count"):
