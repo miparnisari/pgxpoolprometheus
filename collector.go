@@ -125,7 +125,7 @@ func newCollector(fn staterFunc, labels map[string]string) *Collector {
 			nil, labels),
 		maxLifetimeDestroyCount: prometheus.NewDesc(
 			"pgxpool_max_lifetime_destroy_count",
-			"Cumulative count of connections destroyed because they exceeded MaxConnLifetime. ",
+			"Cumulative count of connections destroyed because they exceeded MaxConnLifetime.",
 			nil, labels),
 		maxIdleDestroyCount: prometheus.NewDesc(
 			"pgxpool_max_idle_destroy_count",
