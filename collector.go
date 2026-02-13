@@ -36,6 +36,7 @@ type pgxStat interface {
 	CanceledAcquireCount() int64
 	ConstructingConns() int32
 	EmptyAcquireCount() int64
+	EmptyAcquireWaitTime() time.Duration
 	IdleConns() int32
 	MaxConns() int32
 	TotalConns() int32
@@ -57,6 +58,7 @@ type Collector struct {
 	canceledAcquireCountDesc *prometheus.Desc
 	constructingConnsDesc    *prometheus.Desc
 	emptyAcquireCountDesc    *prometheus.Desc
+	emptyAcquireWaitTimeDesc *prometheus.Desc
 	idleConnsDesc            *prometheus.Desc
 	maxConnsDesc             *prometheus.Desc
 	totalConnsDesc           *prometheus.Desc
@@ -106,6 +108,10 @@ func newCollector(fn staterFunc, labels map[string]string) *Collector {
 		emptyAcquireCountDesc: prometheus.NewDesc(
 			"pgxpool_empty_acquire",
 			"Cumulative count of successful acquires from the pool that waited for a resource to be released or constructed because the pool was empty.",
+			nil, labels),
+		emptyAcquireWaitTimeDesc: prometheus.NewDesc(
+			"pgxpool_empty_acquire_wait_time_seconds",
+			"Cumulative time in seconds waited for successful acquires from the pool for a resource to be released or constructed because the pool was empty.",
 			nil, labels),
 		idleConnsDesc: prometheus.NewDesc(
 			"pgxpool_idle_conns",
@@ -173,6 +179,11 @@ func (c *Collector) Collect(metrics chan<- prometheus.Metric) {
 		stats.emptyAcquireCount(),
 	)
 	metrics <- prometheus.MustNewConstMetric(
+		c.emptyAcquireWaitTimeDesc,
+		prometheus.CounterValue,
+		stats.emptyAcquireWaitTime(),
+	)
+	metrics <- prometheus.MustNewConstMetric(
 		c.idleConnsDesc,
 		prometheus.GaugeValue,
 		stats.idleConns(),
@@ -227,6 +238,9 @@ func (w *statWrapper) constructingConns() float64 {
 }
 func (w *statWrapper) emptyAcquireCount() float64 {
 	return float64(w.stats.EmptyAcquireCount())
+}
+func (w *statWrapper) emptyAcquireWaitTime() float64 {
+	return float64(w.stats.EmptyAcquireWaitTime()) / 1e9
 }
 func (w *statWrapper) idleConns() float64 {
 	return float64(w.stats.IdleConns())

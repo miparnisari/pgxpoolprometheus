@@ -62,6 +62,9 @@ func (m *pgxStatMock) ConstructingConns() int32 {
 func (m *pgxStatMock) EmptyAcquireCount() int64 {
 	return m.Called().Get(0).(int64)
 }
+func (m *pgxStatMock) EmptyAcquireWaitTime() time.Duration {
+	return m.Called().Get(0).(time.Duration)
+}
 func (m *pgxStatMock) IdleConns() int32 {
 	return m.Called().Get(0).(int32)
 }
@@ -101,6 +104,9 @@ func (m noOpStat) ConstructingConns() int32 {
 func (m noOpStat) EmptyAcquireCount() int64 {
 	return 0
 }
+func (m noOpStat) EmptyAcquireWaitTime() time.Duration {
+	return 0
+}
 func (m noOpStat) IdleConns() int32 {
 	return 0
 }
@@ -136,10 +142,8 @@ func TestDescribeDescribesAllAvailableStats(t *testing.T) {
 
 	expectedDescriptorCountRemaining := expectedDescriptorCount
 	uniqueDescriptors := make(map[string]struct{})
-	for {
-		if expectedDescriptorCountRemaining == 0 {
-			break
-		}
+	for expectedDescriptorCountRemaining != 0 {
+
 		select {
 		case desc := <-ch:
 			assert.Contains(t, desc.String(), labelName)
@@ -167,6 +171,7 @@ func TestCollectCollectsAllAvailableStats(t *testing.T) {
 	expectedNewConnsCount := float64(10)
 	expectedMaxLifetimeDestroyCount := float64(11)
 	expectedMaxIdleDestroyCount := float64(12)
+	expectedEmptyAcquireWaitTime := float64(13)
 
 	mockStats := &pgxStatMock{}
 	mockStats.On("AcquireCount").Return(int64(1))
@@ -181,6 +186,7 @@ func TestCollectCollectsAllAvailableStats(t *testing.T) {
 	mockStats.On("NewConnsCount").Return(int64(10))
 	mockStats.On("MaxLifetimeDestroyCount").Return(int64(11))
 	mockStats.On("MaxIdleDestroyCount").Return(int64(12))
+	mockStats.On("EmptyAcquireWaitTime").Return(time.Second * 13)
 	expectedMetricCount := 12
 	timeout := time.After(time.Second * 5)
 	stater := &mockStater{}
@@ -192,10 +198,8 @@ func TestCollectCollectsAllAvailableStats(t *testing.T) {
 	go testObject.Collect(ch)
 
 	expectedMetricCountRemaining := expectedMetricCount
-	for {
-		if expectedMetricCountRemaining == 0 {
-			break
-		}
+	for expectedMetricCountRemaining != 0 {
+
 		select {
 		case metric := <-ch:
 			pb := &dto.Metric{}
@@ -212,6 +216,8 @@ func TestCollectCollectsAllAvailableStats(t *testing.T) {
 				assert.Equal(t, expectedCanceledAcquireCount, *pb.GetCounter().Value)
 			case strings.Contains(description, "pgxpool_constructing_conns"):
 				assert.Equal(t, expectedConstructingConns, *pb.GetGauge().Value)
+			case strings.Contains(description, "pgxpool_empty_acquire_wait_time_seconds"):
+				assert.Equal(t, expectedEmptyAcquireWaitTime, *pb.GetCounter().Value)
 			case strings.Contains(description, "pgxpool_empty_acquire"):
 				assert.Equal(t, expectedEmptyAcquireCount, *pb.GetCounter().Value)
 			case strings.Contains(description, "pgxpool_idle_conns"):
