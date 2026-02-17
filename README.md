@@ -1,4 +1,3 @@
-[![Build Status](https://app.travis-ci.com/github/IBM/pgxpoolprometheus.svg?branch=main)](https://app.travis-ci.com/github/IBM/pgxpoolprometheus)
 [![Release](https://img.shields.io/github/v/release/IBM/pgxpoolprometheus)](https://github.com/IBM/pgxpoolprometheus/releases/latest)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/IBM/pgxpoolprometheus)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
